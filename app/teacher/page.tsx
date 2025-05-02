@@ -12,8 +12,8 @@ interface Quiz {
   id: string
   title: string
   description: string
-  created_at: string
-  public_id: string
+  createdAt: string
+  publicId: string
 }
 
 export default function TeacherDashboardPage() {
@@ -196,10 +196,10 @@ export default function TeacherDashboardPage() {
               <Card key={quiz.id}>
                 <CardHeader>
                   <CardTitle>{quiz.title}</CardTitle>
-                  <CardDescription>Created on {formatDate(quiz.created_at)}</CardDescription>
+                  <CardDescription>Created on {formatDate(quiz.createdAt)}</CardDescription>
                   <div className="mt-2 flex items-center">
                     <span className="text-xs font-medium text-muted-foreground">Public ID:</span>
-                    <code className="ml-2 rounded bg-muted px-2 py-1 text-xs font-mono">{quiz.public_id || "N/A"}</code>
+                    <code className="ml-2 rounded bg-muted px-2 py-1 text-xs font-mono">{quiz.publicId || "N/A"}</code>
                   </div>
                 </CardHeader>
                 <CardContent>
