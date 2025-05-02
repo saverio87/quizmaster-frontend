@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
-import { ArrowLeft, AlertTriangle } from "lucide-react"
+import { ArrowLeft, AlertTriangle, Calendar } from "lucide-react"
 import Link from "next/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
@@ -23,6 +23,7 @@ interface QuizStats {
     correct: number
     total: number
     percentage: number
+    submitted_at?: string
   }[]
   questionStats: {
     id: string
@@ -45,6 +46,7 @@ interface QuizStats {
 }
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8", "#82ca9d"]
+const PERFORMANCE_COLOR = "#FF6B6B" // New vibrant color for the performance chart
 
 export default function QuizStatsPage({ params }: { params: { id: string } }) {
   const [stats, setStats] = useState<QuizStats | null>(null)
@@ -75,6 +77,34 @@ export default function QuizStatsPage({ params }: { params: { id: string } }) {
 
     fetchStats()
   }, [params.id, toast])
+
+  // Format date for student submission times
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "Unknown date"
+
+    try {
+      // Handle PostgreSQL timestamp format
+      const isoString = dateString.replace(" ", "T")
+      const date = new Date(isoString)
+
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.error("Invalid date:", dateString)
+        return "Invalid date"
+      }
+
+      return date.toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    } catch (error) {
+      console.error("Error formatting date:", error)
+      return "Date error"
+    }
+  }
 
   if (error) {
     return (
@@ -121,6 +151,55 @@ export default function QuizStatsPage({ params }: { params: { id: string } }) {
           </div>
         ) : (
           <div className="space-y-8">
+            {/* New section: Student Submissions */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center text-indigo-600">
+                  <Calendar className="mr-2 h-5 w-5" />
+                  Student Submissions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-3 px-4 font-medium">Student</th>
+                        <th className="text-left py-3 px-4 font-medium">Score</th>
+                        <th className="text-left py-3 px-4 font-medium">Percentage</th>
+                        <th className="text-left py-3 px-4 font-medium">Submitted At</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.studentStats.map((student) => (
+                        <tr key={student.id} className="border-b hover:bg-gray-50">
+                          <td className="py-3 px-4 font-medium">{student.name}</td>
+                          <td className="py-3 px-4">
+                            {student.correct} / {student.total}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${student.percentage >= 70
+                                ? "bg-green-100 text-green-800"
+                                : student.percentage >= 50
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-red-100 text-red-800"
+                                }`}
+                            >
+                              {student.percentage}%
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-gray-500">
+                            {student.submitted_at ? formatDate(student.submitted_at) : "Unknown"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
             {stats.hardestQuestions.length > 0 && (
               <Card>
                 <CardHeader className="pb-2">
@@ -158,31 +237,38 @@ export default function QuizStatsPage({ params }: { params: { id: string } }) {
                   <CardHeader>
                     <CardTitle>Student Performance</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="h-80">
+                  <CardContent className="p-2 md:p-4">
+                    {/* Dynamic height based on number of students */}
+                    <div className={`h-auto min-h-[300px] max-h-[500px] overflow-auto`}>
                       <ChartContainer
                         config={{
-                          student: { theme: { light: "#3b82f6", dark: "#60a5fa" } },
+                          student: { theme: { light: PERFORMANCE_COLOR, dark: PERFORMANCE_COLOR } },
                         }}
                       >
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height={Math.max(300, stats.studentStats.length * 40)}>
+                          {/* Changed to horizontal bar chart with compact spacing */}
                           <BarChart
+
+                            layout="vertical"
+                            barGap={0}
+                            barCategoryGap={2}
                             data={stats.studentStats.map((student) => ({
                               name: student.name,
                               score: student.percentage,
                               student: "student",
                             }))}
-                            margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+
                           >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} />
+                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                            <XAxis type="number" domain={[0, 100]} />
                             <YAxis
-                              label={{
-                                value: "Score (%)",
-                                angle: -90,
-                                position: "insideLeft",
-                                style: { textAnchor: "middle" },
-                              }}
+                              dataKey="name"
+                              type="category"
+                              width={90}
+                              tick={{ fontSize: 12 }}
+                              axisLine={false}
+                              tickLine={false}
                             />
                             <ChartTooltip
                               content={({ active, payload }) => {
@@ -197,7 +283,11 @@ export default function QuizStatsPage({ params }: { params: { id: string } }) {
                                 return null
                               }}
                             />
-                            <Bar dataKey="score" fill="var(--color-student)" />
+                            <Bar
+                              dataKey="score"
+                              fill="var(--color-student)"
+                              barSize={20} // Made bars even thinner
+                            />
                           </BarChart>
                         </ResponsiveContainer>
                       </ChartContainer>

@@ -7,14 +7,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import { BarChart, Users, FileText, ArrowRight, Plus, School } from "lucide-react"
 import Link from "next/link"
-import { log } from "console"
 
 interface Quiz {
   id: string
   title: string
   description: string
-  createdAt: string
-  publicId: string // Add this field
+  created_at: string
+  public_id: string
 }
 
 export default function TeacherDashboardPage() {
@@ -32,7 +31,6 @@ export default function TeacherDashboardPage() {
         }
         const data = await response.json()
         setQuizzes(data)
-        console.log(data)
       } catch (err) {
         setError("Failed to load quizzes. Please try again later.")
         toast({
@@ -112,18 +110,6 @@ export default function TeacherDashboardPage() {
             <p className="text-gray-500 mt-1">Monitor student progress and quiz performance</p>
           </div>
           <div className="mt-4 md:mt-0 space-x-2">
-            <Link href="/teacher/create-quiz">
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Quiz
-              </Button>
-            </Link>
-            <Link href="/teacher/classrooms">
-              <Button variant="outline">
-                <School className="mr-2 h-4 w-4" />
-                Manage Classrooms
-              </Button>
-            </Link>
             <Link href="/">
               <Button variant="ghost">Back to Home</Button>
             </Link>
@@ -160,6 +146,35 @@ export default function TeacherDashboardPage() {
           </Card>
         </div>
 
+        {/* New section: Big action cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <Link href="/teacher/create-quiz" className="block">
+            <Card className="h-full transition-all hover:shadow-md hover:border-primary/50">
+              <CardContent className="flex flex-col items-center justify-center p-6 h-full">
+                <div className="rounded-full bg-primary/10 p-4 mb-4">
+                  <Plus className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Create Quiz</h3>
+                <p className="text-center text-muted-foreground">
+                  Create a new quiz for your students with multiple-choice questions
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/teacher/classrooms" className="block">
+            <Card className="h-full transition-all hover:shadow-md hover:border-primary/50">
+              <CardContent className="flex flex-col items-center justify-center p-6 h-full">
+                <div className="rounded-full bg-primary/10 p-4 mb-4">
+                  <School className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Manage Classrooms</h3>
+                <p className="text-center text-muted-foreground">Create and manage classrooms, and enroll students</p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
         <div className="mb-6">
           <h2 className="text-2xl font-bold">Quiz Analytics</h2>
         </div>
@@ -181,10 +196,10 @@ export default function TeacherDashboardPage() {
               <Card key={quiz.id}>
                 <CardHeader>
                   <CardTitle>{quiz.title}</CardTitle>
-                  <CardDescription>Created on {formatDate(quiz.createdAt)}</CardDescription>
+                  <CardDescription>Created on {formatDate(quiz.created_at)}</CardDescription>
                   <div className="mt-2 flex items-center">
                     <span className="text-xs font-medium text-muted-foreground">Public ID:</span>
-                    <code className="ml-2 rounded bg-muted px-2 py-1 text-xs font-mono">{quiz.publicId || "N/A"}</code>
+                    <code className="ml-2 rounded bg-muted px-2 py-1 text-xs font-mono">{quiz.public_id || "N/A"}</code>
                   </div>
                 </CardHeader>
                 <CardContent>
