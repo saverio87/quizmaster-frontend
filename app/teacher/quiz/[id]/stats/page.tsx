@@ -47,6 +47,8 @@ interface QuizStats {
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8", "#82ca9d"]
 const PERFORMANCE_COLOR = "#FF6B6B" // New vibrant color for the performance chart
+const CORRECT_COLOR = "#22c55e" // Green for correct answers
+const INCORRECT_COLOR = "#ef4444" // Red for incorrect answers
 
 export default function QuizStatsPage({ params }: { params: { id: string } }) {
   const [stats, setStats] = useState<QuizStats | null>(null)
@@ -180,10 +182,10 @@ export default function QuizStatsPage({ params }: { params: { id: string } }) {
                           <td className="py-3 px-4">
                             <span
                               className={`px-2 py-1 rounded-full text-xs font-medium ${student.percentage >= 70
-                                ? "bg-green-100 text-green-800"
-                                : student.percentage >= 50
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-red-100 text-red-800"
+                                  ? "bg-green-100 text-green-800"
+                                  : student.percentage >= 50
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-red-100 text-red-800"
                                 }`}
                             >
                               {student.percentage}%
@@ -212,11 +214,40 @@ export default function QuizStatsPage({ params }: { params: { id: string } }) {
                   <div className="space-y-4">
                     {stats.hardestQuestions.map((question, index) => (
                       <div key={question.id} className="p-4 rounded-lg border">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                          <div className="font-medium mb-2 md:mb-0">{question.text}</div>
-                          <div className="flex items-center">
-                            <div className="text-green-500 mr-4">Correct: {question.correctPercentage}%</div>
-                            <div className="text-red-500">Incorrect: {question.incorrectPercentage}%</div>
+                        <div className="flex flex-col space-y-3">
+                          <div className="font-medium">{question.text}</div>
+
+                          {/* New stacked bar chart inside each question card */}
+                          <div className="h-8 w-full bg-gray-100 rounded-md overflow-hidden">
+                            <div className="flex h-full">
+                              <div
+                                className="h-full bg-green-500 flex items-center justify-center text-white text-xs font-medium"
+                                style={{ width: `${question.correctPercentage}%` }}
+                              >
+                                {question.correctPercentage > 15 ? `${question.correctPercentage}%` : ""}
+                              </div>
+                              <div
+                                className="h-full bg-red-500 flex items-center justify-center text-white text-xs font-medium"
+                                style={{ width: `${question.incorrectPercentage}%` }}
+                              >
+                                {question.incorrectPercentage > 15 ? `${question.incorrectPercentage}%` : ""}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center">
+                              <div className="w-3 h-3 bg-green-500 rounded-sm mr-1"></div>
+                              <span>
+                                Correct: {question.correct}/{question.total}
+                              </span>
+                            </div>
+                            <div className="flex items-center">
+                              <div className="w-3 h-3 bg-red-500 rounded-sm mr-1"></div>
+                              <span>
+                                Incorrect: {question.incorrect}/{question.total}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -238,37 +269,41 @@ export default function QuizStatsPage({ params }: { params: { id: string } }) {
                     <CardTitle>Student Performance</CardTitle>
                   </CardHeader>
                   <CardContent className="p-2 md:p-4">
-                    {/* Dynamic height based on number of students */}
-                    <div className={`h-auto min-h-[300px] max-h-[500px] overflow-auto`}>
+                    <div className="h-80">
                       <ChartContainer
                         config={{
                           student: { theme: { light: PERFORMANCE_COLOR, dark: PERFORMANCE_COLOR } },
                         }}
                       >
-                        <ResponsiveContainer width="100%" height={Math.max(300, stats.studentStats.length * 40)}>
-                          {/* Changed to horizontal bar chart with compact spacing */}
+                        <ResponsiveContainer width="100%" height="100%">
+                          {/* Changed back to vertical bars (default layout) */}
                           <BarChart
-
-                            layout="vertical"
                             barGap={0}
-                            barCategoryGap={2}
+                            barCategoryGap={2} // Small gap between categories
                             data={stats.studentStats.map((student) => ({
                               name: student.name,
                               score: student.percentage,
                               student: "student",
                             }))}
-                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-
+                            margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                           >
-                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                            <XAxis type="number" domain={[0, 100]} />
-                            <YAxis
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis
                               dataKey="name"
-                              type="category"
-                              width={90}
+                              angle={-45}
+                              textAnchor="end"
+                              height={60}
+                              interval={0} // Show all labels
                               tick={{ fontSize: 12 }}
-                              axisLine={false}
-                              tickLine={false}
+                            />
+                            <YAxis
+                              domain={[0, 100]}
+                              label={{
+                                value: "Score (%)",
+                                angle: -90,
+                                position: "insideLeft",
+                                style: { textAnchor: "middle" },
+                              }}
                             />
                             <ChartTooltip
                               content={({ active, payload }) => {
@@ -286,7 +321,7 @@ export default function QuizStatsPage({ params }: { params: { id: string } }) {
                             <Bar
                               dataKey="score"
                               fill="var(--color-student)"
-                              barSize={20} // Made bars even thinner
+                              barSize={15} // Thinner bars
                             />
                           </BarChart>
                         </ResponsiveContainer>
@@ -297,116 +332,61 @@ export default function QuizStatsPage({ params }: { params: { id: string } }) {
               </TabsContent>
 
               <TabsContent value="questions">
-                <div className="flex flex-col gap-6">
-                  {/* Question legends - Redesigned */}
-                  <div className="bg-white p-5 rounded-lg border shadow-sm">
-                    <h3 className="text-lg font-medium mb-4">Question Legend</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Correct vs Incorrect by Question</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Grid of individual pie charts for each question */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {stats.questionStats.map((question, index) => (
-                        <div
-                          key={question.id}
-                          className="flex items-start p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
-                          style={{
-                            backgroundColor: `${COLORS[index % COLORS.length]}15`, // Very light version of the color
-                            borderLeft: `4px solid ${COLORS[index % COLORS.length]}`,
-                          }}
-                        >
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm mr-3 flex-shrink-0">
-                            <span className="font-medium text-sm" style={{ color: COLORS[index % COLORS.length] }}>
-                              Q{index + 1}
-                            </span>
+                        <div key={question.id} className="border rounded-lg p-4">
+                          <h3 className="text-sm font-medium mb-3 text-center">
+                            Q{index + 1}:{" "}
+                            {question.text.length > 60 ? `${question.text.substring(0, 60)}...` : question.text}
+                          </h3>
+                          <div className="h-48">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={[
+                                    { name: "Correct", value: question.correct },
+                                    { name: "Incorrect", value: question.incorrect },
+                                  ]}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={30}
+                                  outerRadius={60}
+                                  paddingAngle={5}
+                                  dataKey="value"
+                                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                  labelLine={false}
+                                >
+                                  <Cell fill={CORRECT_COLOR} />
+                                  <Cell fill={INCORRECT_COLOR} />
+                                </Pie>
+                                <Tooltip
+                                  formatter={(value, name) => [`${value} students`, name]}
+                                  contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0" }}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
                           </div>
-                          <div className="text-sm">
-                            {question.text.length > 100 ? `${question.text.substring(0, 100)}...` : question.text}
+                          <div className="flex justify-center mt-2 text-xs space-x-4">
+                            <div className="flex items-center">
+                              <div className="w-3 h-3 bg-green-500 rounded-full mr-1"></div>
+                              <span>Correct: {question.correct}</span>
+                            </div>
+                            <div className="flex items-center">
+                              <div className="w-3 h-3 bg-red-500 rounded-full mr-1"></div>
+                              <span>Incorrect: {question.incorrect}</span>
+                            </div>
                           </div>
                         </div>
                       ))}
                     </div>
-                  </div>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Question Accuracy</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={stats.questionStats.map((q, index) => ({
-                                name: `Q${index + 1}`,
-                                value: q.correctPercentage,
-                                fullText: q.text,
-                              }))}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              outerRadius={80}
-                              fill="#8884d8"
-                              dataKey="value"
-                              label={({ name, value }) => `${name}: ${value}%`}
-                            >
-                              {stats.questionStats.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <Tooltip
-                              formatter={(value, name, props) => [`${value}% Correct`, props.payload.fullText]}
-                            />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Correct vs Incorrect</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-80">
-                        <ChartContainer
-                          config={{
-                            correct: { theme: { light: "#22c55e", dark: "#4ade80" } },
-                            incorrect: { theme: { light: "#ef4444", dark: "#f87171" } },
-                          }}
-                        >
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                              data={stats.questionStats.map((q, index) => ({
-                                name: `Q${index + 1}`,
-                                correct: q.correct,
-                                incorrect: q.incorrect,
-                                fullText: q.text,
-                              }))}
-                              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} />
-                              <YAxis />
-                              <ChartTooltip
-                                content={({ active, payload }) => {
-                                  if (active && payload && payload.length) {
-                                    return (
-                                      <ChartTooltipContent>
-                                        <div className="font-medium">{payload[0].payload.fullText}</div>
-                                        <div>Correct: {payload[0].value}</div>
-                                        <div>Incorrect: {payload[1].value}</div>
-                                      </ChartTooltipContent>
-                                    )
-                                  }
-                                  return null
-                                }}
-                              />
-                              <Bar dataKey="correct" fill="var(--color-correct)" stackId="a" />
-                              <Bar dataKey="incorrect" fill="var(--color-incorrect)" stackId="a" />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </ChartContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </div>

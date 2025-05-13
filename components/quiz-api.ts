@@ -149,6 +149,7 @@ export async function getQuizByPublicId(publicId: string) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quiz/public/${publicId}`)
 
     console.log("Response status:", response.status)
+    console.log(response)
 
     if (!response.ok) {
       console.warn(`Failed to fetch quiz: ${response.status} ${response.statusText}`)

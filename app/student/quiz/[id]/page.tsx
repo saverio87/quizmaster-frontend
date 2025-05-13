@@ -1,620 +1,96 @@
-// "use client"
-
-// import { use, useState, useEffect } from "react"
-// import { useRouter } from "next/navigation"
-// import { Card, CardContent } from "@/components/ui/card"
-// import { Button } from "@/components/ui/button"
-// import { Progress } from "@/components/ui/progress"
-// import { useToast } from "@/hooks/use-toast"
-// import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle } from "lucide-react"
-// import { Skeleton } from "@/components/ui/skeleton"
-// import {
-//   AlertDialog,
-//   AlertDialogAction,
-//   AlertDialogCancel,
-//   AlertDialogContent,
-//   AlertDialogDescription,
-//   AlertDialogFooter,
-//   AlertDialogHeader,
-//   AlertDialogTitle,
-// } from "@/components/ui/alert-dialog"
-// import { getQuizQuestions, submitQuiz } from "@/components/quiz-api"
-
-// interface Question {
-//   id: string
-//   question_text: string
-//   options: string[]
-// }
-
-// interface Student {
-//   id: string
-//   name: string
-// }
-
-// interface Quiz {
-//   id: string
-//   title: string
-// }
-
-// interface Answer {
-//   questionId: string
-//   selectedAnswer: string
-// }
-
-// // Sample questions for testing when API fails
-// const sampleQuestions: Question[] = [
-//   {
-//     id: "q1",
-//     question_text: "What is the capital of France?",
-//     options: ["Paris", "London", "Berlin", "Madrid"],
-//   },
-//   {
-//     id: "q2",
-//     question_text: "Which planet is known as the Red Planet?",
-//     options: ["Mars", "Venus", "Jupiter", "Saturn"],
-//   },
-//   {
-//     id: "q3",
-//     question_text: "What is 2 + 2?",
-//     options: ["3", "4", "5", "6"],
-//   },
-//   {
-//     id: "q4",
-//     question_text: "Who wrote 'Romeo and Juliet'?",
-//     options: ["Charles Dickens", "William Shakespeare", "Jane Austen", "Mark Twain"],
-//   },
-// ]
-
-// export default function QuizPage({ params }: { params: Promise<{ id: string }> }) {
-//   const [questions, setQuestions] = useState<Question[]>([])
-//   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-//   const [answers, setAnswers] = useState<Answer[]>([])
-//   const [loading, setLoading] = useState(true)
-//   const [error, setError] = useState<string | null>(null)
-//   const [student, setStudent] = useState<Student | null>(null)
-//   const [quiz, setQuiz] = useState<Quiz | null>(null)
-//   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
-//   const [submitting, setSubmitting] = useState(false)
-//   const [usingSampleData, setUsingSampleData] = useState(false)
-//   const [alreadySubmitted, setAlreadySubmitted] = useState(false)
-//   const [showAlreadySubmittedDialog, setShowAlreadySubmittedDialog] = useState(false)
-
-//   const { id } = use(params)
-//   const router = useRouter()
-//   const { toast } = useToast()
-
-//   type RawQuestion = {
-//     id: string;
-//     question_text: string;
-//     options: string; // This comes as a JSON string from the DB
-//   };
-
-//   useEffect(() => {
-//     // Check if student is selected
-//     const storedStudent = localStorage.getItem("selectedStudent")
-//     const storedQuiz = localStorage.getItem("selectedQuiz")
-
-//     if (!storedStudent) {
-//       router.push("/student")
-//       return
-//     }
-
-//     setStudent(JSON.parse(storedStudent))
-
-//     if (storedQuiz) {
-//       setQuiz(JSON.parse(storedQuiz))
-//     }
-
-//     const fetchQuestions = async () => {
-//       try {
-//         console.log(`Fetching questions from: ${process.env.NEXT_PUBLIC_API_URL}/api/quiz/${id}/questions`)
-
-//         const data = await getQuizQuestions(id)
-//         console.log("Received data:", data)
-
-//         // Transform the data to match our Question interface
-//         const formattedQuestions = (data as RawQuestion[]).map((q: any) => ({
-//           id: q.id,
-//           question_text: q.question_text,
-//           options: Array.isArray(q.options) ? q.options : JSON.parse(q.options),
-//         }))
-
-//         setQuestions(formattedQuestions)
-
-//         // Initialize answers array with empty values
-//         setAnswers(
-//           formattedQuestions.map((q) => ({
-//             questionId: q.id,
-//             selectedAnswer: "",
-//           })),
-//         )
-//       } catch (err) {
-//         console.error("Error fetching questions:", err)
-
-//         // Use sample data for testing
-//         setUsingSampleData(true)
-//         setQuestions(sampleQuestions)
-//         setAnswers(
-//           sampleQuestions.map((q) => ({
-//             questionId: q.id,
-//             selectedAnswer: "",
-//           })),
-//         )
-
-//         setError("Failed to load quiz questions from the API. Using sample questions for testing.")
-//         toast({
-//           title: "API Error",
-//           description:
-//             "Using sample questions for testing. In a production environment, this would connect to your backend API.",
-//           variant: "destructive",
-//         })
-//       } finally {
-//         setLoading(false)
-//       }
-//     }
-
-//     fetchQuestions()
-//   }, [id, router, toast])
-
-
-//   const handleAnswerSelect = (answer: string) => {
-//     const updatedAnswers = [...answers]
-
-//     // Make sure we're storing the answer in the correct format
-//     updatedAnswers[currentQuestionIndex] = {
-//       questionId: questions[currentQuestionIndex].id,
-//       selectedAnswer: answer,
-//     }
-
-//     console.log(`Selected answer for question ${currentQuestionIndex + 1}:`, {
-//       questionId: questions[currentQuestionIndex].id,
-//       selectedAnswer: answer,
-//     })
-
-//     setAnswers(updatedAnswers)
-
-//     // Auto-navigate to next question after a short delay
-//     if (currentQuestionIndex < questions.length - 1) {
-//       setTimeout(() => {
-//         setCurrentQuestionIndex(currentQuestionIndex + 1)
-//       }, 500)
-//     }
-//   }
-
-//   const handlePrevQuestion = () => {
-//     if (currentQuestionIndex > 0) {
-//       setCurrentQuestionIndex(currentQuestionIndex - 1)
-//     }
-//   }
-
-//   const handleNextQuestion = () => {
-//     if (currentQuestionIndex < questions.length - 1) {
-//       setCurrentQuestionIndex(currentQuestionIndex + 1)
-//     }
-//   }
-
-//   const handleSubmitQuiz = async () => {
-//     if (!student) return
-
-//     setSubmitting(true)
-
-//     try {
-//       // Log submission attempt
-//       console.log("Attempting to submit quiz:", {
-//         quizId: id,
-//         studentId: student.id,
-//         answers: answers,
-//       })
-
-//       // If using sample data, simulate a successful submission
-//       if (usingSampleData) {
-//         console.log("Using sample data - simulating submission")
-//         // Calculate a random score
-//         const score = Math.floor(Math.random() * (questions.length + 1))
-
-//         // Show success toast
-//         toast({
-//           title: "Quiz Submitted! (Demo)",
-//           description: `You scored ${score} out of ${questions.length}`,
-//         })
-
-//         // Broadcast submission to other users
-//         if (student) {
-//           const event = new CustomEvent("quizSubmitted", {
-//             detail: {
-//               studentName: student.name,
-//               score: score,
-//               totalQuestions: questions.length,
-//             },
-//           })
-//           window.dispatchEvent(event)
-//         }
-
-//         // Navigate to results page
-//         router.push(`/student/quiz/${id}/results?score=${score}&total=${questions.length}`)
-//         return
-//       }
-
-//       // Real API submission
-//       console.log("Submitting to real API")
-//       const result = await submitQuiz(id, student.id, answers)
-//       console.log("Submission result:", result)
-
-//       // Show success toast
-//       toast({
-//         title: "Quiz Submitted!",
-//         description: `You scored ${result.submission.score} out of ${result.submission.totalQuestions}`,
-//       })
-
-//       // Broadcast submission to other users
-//       if (student) {
-//         // This would typically be done via WebSockets, but for this demo we'll use a custom event
-//         const event = new CustomEvent("quizSubmitted", {
-//           detail: {
-//             studentName: student.name,
-//             score: result.submission.score,
-//             totalQuestions: result.submission.totalQuestions,
-//           },
-//         })
-//         window.dispatchEvent(event)
-//       }
-
-//       // Navigate to results page
-//       router.push(
-//         `/student/quiz/${id}/results?score=${result.submission.score}&total=${result.submission.totalQuestions}`,
-//       )
-//     } catch (err) {
-//       console.error("Error submitting quiz:", err)
-
-//       // Check if the error is because the quiz was already submitted
-//       if (err instanceof Error && err.message.includes("already taken")) {
-//         setAlreadySubmitted(true)
-//         setShowAlreadySubmittedDialog(true)
-//         return
-//       }
-
-//       // For demo purposes, simulate a successful submission
-//       if (usingSampleData) {
-//         const score = Math.floor(Math.random() * (questions.length + 1))
-//         router.push(`/student/quiz/${id}/results?score=${score}&total=${questions.length}`)
-//         return
-//       }
-
-//       toast({
-//         title: "Error",
-//         description: "Failed to submit quiz. Please try again.",
-//         variant: "destructive",
-//       })
-//     } finally {
-//       setSubmitting(false)
-//       setShowConfirmDialog(false)
-//     }
-//   }
-
-//   const allQuestionsAnswered = answers.every((answer) => answer.selectedAnswer !== "")
-//   const currentQuestion = questions[currentQuestionIndex]
-//   const currentAnswer = answers[currentQuestionIndex]?.selectedAnswer || ""
-
-//   if (alreadySubmitted) {
-//     return (
-//       <div className="flex min-h-screen flex-col items-center justify-center p-4">
-//         <div className="max-w-md w-full text-center">
-//           <h2 className="text-2xl font-bold mb-4 text-amber-600">Quiz Already Submitted</h2>
-//           <p className="mb-6">You have already taken this quiz. You can only take it once.</p>
-//           <Button onClick={() => router.push("/student/quizzes")}>Back to Quizzes</Button>
-//         </div>
-//       </div>
-//     )
-//   }
-
-//   if (error && !usingSampleData) {
-//     return (
-//       <div className="flex min-h-screen flex-col items-center justify-center p-4">
-//         <div className="max-w-md w-full text-center">
-//           <h2 className="text-2xl font-bold mb-4 text-red-600">Error</h2>
-//           <p className="mb-6">{error}</p>
-//           <Button onClick={() => router.push("/student/quizzes")}>Back to Quizzes</Button>
-//         </div>
-//       </div>
-//     )
-//   }
-
-//   return (
-//     <div className="flex min-h-screen flex-col items-center p-4 md:p-8">
-//       <div className="max-w-4xl w-full">
-//         {usingSampleData && (
-//           <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md flex items-center">
-//             <AlertCircle className="h-5 w-5 text-yellow-500 mr-2" />
-//             <p className="text-sm text-yellow-700">
-//               Using sample questions for demonstration. In a production environment, this would connect to your backend
-//               API.
-//             </p>
-//           </div>
-//         )}
-
-//         {loading ? (
-//           <div className="space-y-8">
-//             <div className="flex justify-between items-center">
-//               <Skeleton className="h-8 w-48" />
-//               <Skeleton className="h-8 w-24" />
-//             </div>
-//             <Skeleton className="h-4 w-full" />
-//             <Skeleton className="h-32 w-full rounded-lg" />
-//             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//               {Array.from({ length: 4 }).map((_, index) => (
-//                 <Skeleton key={index} className="h-16 rounded-lg" />
-//               ))}
-//             </div>
-//           </div>
-//         ) : (
-//           <>
-//             <div className="flex justify-between items-center mb-6">
-//               <h1 className="text-2xl font-bold">{quiz?.title || "Quiz"}</h1>
-//               <div className="text-sm text-gray-500">
-//                 Question {currentQuestionIndex + 1} of {questions.length}
-//               </div>
-//             </div>
-
-//             <Progress value={((currentQuestionIndex + 1) / questions.length) * 100} className="h-2 mb-8" />
-
-//             <Card className="mb-8">
-//               <CardContent className="p-6">
-//                 <h2 className="text-xl font-medium mb-2">{currentQuestion?.question_text || "Loading question..."}</h2>
-//               </CardContent>
-//             </Card>
-
-//             <div className="grid grid-cols-1 gap-4 mb-8">
-//               {currentQuestion?.options.map((option, index) => (
-//                 <Card
-//                   key={index}
-//                   className={`cursor-pointer transition-all ${currentAnswer === option ? "border-primary bg-primary/10" : "hover:border-gray-400"
-//                     }`}
-//                   onClick={() => handleAnswerSelect(option)}
-//                 >
-//                   <CardContent className="p-4 flex items-center">
-//                     <div className="mr-3 flex-shrink-0">
-//                       {currentAnswer === option ? (
-//                         <CheckCircle className="h-5 w-5 text-primary" />
-//                       ) : (
-//                         <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
-//                       )}
-//                     </div>
-//                     <div>{option}</div>
-//                   </CardContent>
-//                 </Card>
-//               ))}
-//             </div>
-
-//             <div className="flex justify-between">
-//               <Button variant="outline" onClick={handlePrevQuestion} disabled={currentQuestionIndex === 0}>
-//                 <ArrowLeft className="mr-2 h-4 w-4" /> Previous
-//               </Button>
-
-//               {currentQuestionIndex < questions.length - 1 ? (
-//                 <Button onClick={handleNextQuestion} disabled={!currentAnswer}>
-//                   Next <ArrowRight className="ml-2 h-4 w-4" />
-//                 </Button>
-//               ) : (
-//                 <Button onClick={() => setShowConfirmDialog(true)} disabled={!allQuestionsAnswered}>
-//                   Submit Quiz
-//                 </Button>
-//               )}
-//             </div>
-//           </>
-//         )}
-//       </div>
-
-//       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-//         <AlertDialogContent>
-//           <AlertDialogHeader>
-//             <AlertDialogTitle>Submit Quiz?</AlertDialogTitle>
-//             <AlertDialogDescription>
-//               Are you sure you want to submit your quiz? You won't be able to change your answers after submission.
-//             </AlertDialogDescription>
-//           </AlertDialogHeader>
-//           <AlertDialogFooter>
-//             <AlertDialogCancel>Cancel</AlertDialogCancel>
-//             <AlertDialogAction onClick={handleSubmitQuiz} disabled={submitting}>
-//               {submitting ? "Submitting..." : "Submit Quiz"}
-//             </AlertDialogAction>
-//           </AlertDialogFooter>
-//         </AlertDialogContent>
-//       </AlertDialog>
-
-//       <AlertDialog open={showAlreadySubmittedDialog} onOpenChange={setShowAlreadySubmittedDialog}>
-//         <AlertDialogContent>
-//           <AlertDialogHeader>
-//             <AlertDialogTitle>Quiz Already Submitted</AlertDialogTitle>
-//             <AlertDialogDescription>
-//               You have already taken this quiz. You can only take it once.
-//             </AlertDialogDescription>
-//           </AlertDialogHeader>
-//           <AlertDialogFooter>
-//             <AlertDialogAction onClick={() => router.push("/student/quizzes")}>Back to Quizzes</AlertDialogAction>
-//           </AlertDialogFooter>
-//         </AlertDialogContent>
-//       </AlertDialog>
-//     </div>
-//   )
-// }
-
-
 "use client"
 
-import { use, useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
+import { Card, CardContent } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { getQuizQuestions, submitQuiz } from "@/components/quiz-api"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Progress } from "@/components/ui/progress"
+import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle } from "lucide-react"
+import { submitQuiz, getQuizByPublicId } from "@/components/quiz-api"
 
-interface Question {
-  id: string
-  question_text: string
-  options: string[]
-}
+import { sampleQuiz } from "./sample"
 
-interface Student {
-  id: string
-  name: string
-}
 
-interface Quiz {
-  id: string
-  title: string
-}
 
-interface Answer {
-  questionId: string
-  selectedAnswer: string
-}
-
-// Sample questions for testing when API fails
-const sampleQuestions: Question[] = [
-  {
-    id: "q1",
-    question_text: "What is the capital of France?",
-    options: ["Paris", "London", "Berlin", "Madrid"],
-  },
-  {
-    id: "q2",
-    question_text: "Which planet is known as the Red Planet?",
-    options: ["Mars", "Venus", "Jupiter", "Saturn"],
-  },
-  {
-    id: "q3",
-    question_text: "What is 2 + 2?",
-    options: ["3", "4", "5", "6"],
-  },
-  {
-    id: "q4",
-    question_text: "Who wrote 'Romeo and Juliet'?",
-    options: ["Charles Dickens", "William Shakespeare", "Jane Austen", "Mark Twain"],
-  },
-]
-
-export default function QuizPage({ params }: { params: Promise<{ id: string }> }) {
-  const [questions, setQuestions] = useState<Question[]>([])
+export default function QuizPage({ params }: { params: { id: string } }) {
+  const router = useRouter()
+  const [quiz, setQuiz] = useState<any>(null)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [answers, setAnswers] = useState<Answer[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [student, setStudent] = useState<Student | null>(null)
-  const [quiz, setQuiz] = useState<Quiz | null>(null)
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [answers, setAnswers] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
-  const [usingSampleData, setUsingSampleData] = useState(false)
-  const [alreadySubmitted, setAlreadySubmitted] = useState(false)
   const [showAlreadySubmittedDialog, setShowAlreadySubmittedDialog] = useState(false)
+  const [usingSampleData, setUsingSampleData] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
-  const { id } = use(params)
-  const router = useRouter()
-  const { toast } = useToast()
-
-  type RawQuestion = {
-    id: string;
-    question_text: string;
-    options: string; // This comes as a JSON string from the DB
-  };
+  // Get student data from localStorage
+  const getStudentData = () => {
+    if (typeof window !== "undefined") {
+      const studentData = localStorage.getItem("selectedStudent")
+      console.log("Retrieved student data:", studentData)
+      return studentData ? JSON.parse(studentData) : null
+    }
+    return null
+  }
 
   useEffect(() => {
-    // Check if student is selected
-    const storedStudent = localStorage.getItem("selectedStudent")
-    const storedQuiz = localStorage.getItem("selectedQuiz")
-
-    if (!storedStudent) {
-      router.push("/student")
-      return
-    }
-
-    setStudent(JSON.parse(storedStudent))
-
-    if (storedQuiz) {
-      setQuiz(JSON.parse(storedQuiz))
-    }
-
-    const fetchQuestions = async () => {
+    const fetchQuiz = async () => {
       try {
-        console.log(`Fetching questions from: ${process.env.NEXT_PUBLIC_API_URL}/api/quiz/${id}/questions`)
+        console.log(params.id)
+        console.log(`Fetching quiz with public ID: ${params.id}`)
+        const data = await getQuizByPublicId(params.id)
+        console.log("Quiz data received:", data)
 
-        const data = await getQuizQuestions(id)
-        console.log("Received data:", data)
-
-        // Transform the data to match our Question interface
-        const formattedQuestions = (data as RawQuestion[]).map((q: any) => ({
+        // parsing data
+        const formattedQuestions = data.questions.map((q: any) => ({
           id: q.id,
           question_text: q.question_text,
-          options: Array.isArray(q.options) ? q.options : JSON.parse(q.options),
+          options: typeof q.options === "string" ? JSON.parse(q.options) : q.options,
         }))
 
-        setQuestions(formattedQuestions)
+        data.questions = formattedQuestions
 
-        // Initialize answers array with empty values
-        setAnswers(
-          formattedQuestions.map((q) => ({
-            questionId: q.id,
-            selectedAnswer: "",
-          })),
-        )
-      } catch (err) {
-        console.error("Error fetching questions:", err)
+        setQuiz(data)
+        setUsingSampleData(false)
+      } catch (err: any) {
+        console.error("Error fetching quiz:", err)
 
-        // Use sample data for testing
+        // Use sample data if API is not available
+        console.log("Using sample quiz data for testing")
+        setQuiz(sampleQuiz)
         setUsingSampleData(true)
-        setQuestions(sampleQuestions)
-        setAnswers(
-          sampleQuestions.map((q) => ({
-            questionId: q.id,
-            selectedAnswer: "",
-          })),
-        )
 
-        setError("Failed to load quiz questions from the API. Using sample questions for testing.")
-        toast({
-          title: "API Error",
-          description:
-            "Using sample questions for testing. In a production environment, this would connect to your backend API.",
-          variant: "destructive",
-        })
+        // Still set error for debugging purposes
+        setError(`Error fetching quiz: ${err.message || "Unknown error"}`)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchQuestions()
-  }, [id, router, toast])
+    fetchQuiz()
+  }, [params.id])
 
-  const handleAnswerSelect = (answer: string) => {
-    const updatedAnswers = [...answers]
-
-    // Make sure we're storing the answer in the correct format
-    updatedAnswers[currentQuestionIndex] = {
-      questionId: questions[currentQuestionIndex].id,
-      selectedAnswer: answer,
-    }
-
-    console.log(`Selected answer for question ${currentQuestionIndex + 1}:`, {
-      questionId: questions[currentQuestionIndex].id,
-      selectedAnswer: answer,
-    })
-
-    setAnswers(updatedAnswers)
+  const handleAnswerChange = (questionId: string, optionId: string) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: optionId,
+    }))
 
     // Auto-navigate to next question after a short delay
-    if (currentQuestionIndex < questions.length - 1) {
+    if (currentQuestionIndex < quiz?.questions?.length - 1) {
       setTimeout(() => {
         setCurrentQuestionIndex(currentQuestionIndex + 1)
       }, 500)
@@ -628,242 +104,242 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
   }
 
   const handleNextQuestion = () => {
-    if (currentQuestionIndex < questions.length - 1) {
+    if (currentQuestionIndex < quiz?.questions?.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1)
     }
   }
 
-  const handleSubmitQuiz = async () => {
-    // CHANGE: Added validation to check if student exists
-    if (!student) {
-      // CHANGE: Added specific error message for missing student
-      toast({
-        title: "Error",
-        description: "No student selected. Please go back and select a student.",
-        variant: "destructive",
-      })
+  const handleSubmit = async () => {
+    // Validate that all questions have been answered
+    const unansweredQuestions = quiz.questions.filter((q: any) => !answers[q.id])
+    if (unansweredQuestions.length > 0) {
+      setValidationError(
+        `Please answer all questions before submitting. You have ${unansweredQuestions.length} unanswered questions.`,
+      )
       return
     }
 
-    // CHANGE: Added validation to check if student ID exists
-    if (!student.id) {
-      // CHANGE: Added specific error message for missing student ID
-      toast({
-        title: "Error",
-        description: "Student ID is missing. Please go back and select a student again.",
-        variant: "destructive",
-      })
-      return
-    }
-
+    setValidationError(null)
     setSubmitting(true)
 
+    // Get student data
+    const studentData = getStudentData()
+    console.log("Student data for submission:", studentData)
+
+    // Validate student data
+    if (!studentData || !studentData.id) {
+      setError("Student information is missing. Please select a classroom and student before taking a quiz.")
+      setSubmitting(false)
+      return
+    }
+
     try {
-      // CHANGE: Added more detailed logging including student object
-      console.log("Attempting to submit quiz:", {
-        quizId: id,
-        studentId: student.id,
-        studentObject: student, // CHANGE: Added full student object for debugging
-        answers: answers,
-      })
-
-      // If using sample data, simulate a successful submission
-      if (usingSampleData) {
-        console.log("Using sample data - simulating submission")
-        // Calculate a random score
-        const score = Math.floor(Math.random() * (questions.length + 1))
-
-        // Show success toast
-        toast({
-          title: "Quiz Submitted! (Demo)",
-          description: `You scored ${score} out of ${questions.length}`,
-        })
-
-        // Broadcast submission to other users
-        if (student) {
-          const event = new CustomEvent("quizSubmitted", {
-            detail: {
-              studentName: student.name,
-              score: score,
-              totalQuestions: questions.length,
-            },
-          })
-          window.dispatchEvent(event)
-        }
-
-        // Navigate to results page
-        router.push(`/student/quiz/${id}/results?score=${score}&total=${questions.length}`)
-        return
+      // Format the answers array as expected by the submitQuiz function
+      const formattedAnswers = Object.entries(answers).map(([questionId, selectedAnswer]) => ({
+        questionId,
+        selectedAnswer,
+      }))
+      console.log(quiz, quiz.quiz.id)
+      const submissionData = {
+        quizId: quiz.quiz.id,
+        studentId: studentData.id,
+        answers: formattedAnswers,
       }
+      console.log("Submitting quiz with data:", submissionData)
 
-      // CHANGE: Added explicit logging of student ID before submission
-      console.log("Submitting to real API with student ID:", student.id)
-      const result = await submitQuiz(id, student.id, answers)
-      console.log("Submission result:", result)
+      // Call submitQuiz with the correct arguments
+      const result = await submitQuiz(submissionData.quizId, submissionData.studentId, submissionData.answers)
+      console.log("Quiz submission result:", result)
 
-      // Show success toast
-      toast({
-        title: "Quiz Submitted!",
-        description: `You scored ${result.submission.score} out of ${result.submission.totalQuestions}`,
-      })
+      // Calculate score for the event
+      const score = quiz.questions.filter((q: any) => answers[q.id] === q.correctOptionId).length
 
-      // Broadcast submission to other users
-      if (student) {
-        // This would typically be done via WebSockets, but for this demo we'll use a custom event
+      // Dispatch custom event for backward compatibility
+      if (typeof window !== "undefined") {
         const event = new CustomEvent("quizSubmitted", {
           detail: {
-            studentName: student.name,
-            score: result.submission.score,
-            totalQuestions: result.submission.totalQuestions,
+            quizId: quiz.quiz.id,
+            quizTitle: quiz.quiz.title,
+            studentId: studentData.id,
+            studentName: studentData.name,
+            score,
+            totalQuestions: quiz.questions.length,
+            percentage: Math.round((score / quiz.questions.length) * 100),
           },
         })
         window.dispatchEvent(event)
+        console.log("Dispatched quizSubmitted event:", event)
       }
 
       // Navigate to results page
       router.push(
-        `/student/quiz/${id}/results?score=${result.submission.score}&total=${result.submission.totalQuestions}`,
+        `/student/quiz/${params.id}/results?score=${result.submission.score}&total=${result.submission.totalQuestions}`,
       )
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error submitting quiz:", err)
 
-      // Check if the error is because the quiz was already submitted
-      if (err instanceof Error && err.message.includes("already taken")) {
-        setAlreadySubmitted(true)
+      // Check if this is an "already submitted" error
+      if (err.message && err.message.includes("already submitted")) {
         setShowAlreadySubmittedDialog(true)
-        return
+      } else {
+        setError(`Failed to submit quiz: ${err.message || "Unknown error"}`)
       }
-
-      // For demo purposes, simulate a successful submission
-      if (usingSampleData) {
-        const score = Math.floor(Math.random() * (questions.length + 1))
-        router.push(`/student/quiz/${id}/results?score=${score}&total=${questions.length}`)
-        return
-      }
-
-      // CHANGE: Improved error message to show actual error message when available
-      toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : "Failed to submit quiz. Please try again.",
-        variant: "destructive",
-      })
     } finally {
       setSubmitting(false)
       setShowConfirmDialog(false)
     }
   }
 
-  const allQuestionsAnswered = answers.every((answer) => answer.selectedAnswer !== "")
-  const currentQuestion = questions[currentQuestionIndex]
-  const currentAnswer = answers[currentQuestionIndex]?.selectedAnswer || ""
-
-  if (alreadySubmitted) {
+  if (loading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-4">
-        <div className="max-w-md w-full text-center">
-          <h2 className="text-2xl font-bold mb-4 text-amber-600">Quiz Already Submitted</h2>
-          <p className="mb-6">You have already taken this quiz. You can only take it once.</p>
-          <Button onClick={() => router.push("/student/quizzes")}>Back to Quizzes</Button>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-lg">Loading quiz...</p>
         </div>
       </div>
     )
   }
 
-  if (error && !usingSampleData) {
+  if (!quiz) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-4">
-        <div className="max-w-md w-full text-center">
-          <h2 className="text-2xl font-bold mb-4 text-red-600">Error</h2>
-          <p className="mb-6">{error}</p>
-          <Button onClick={() => router.push("/student/quizzes")}>Back to Quizzes</Button>
-        </div>
+      <div className="container mx-auto p-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error || "Failed to load quiz. Please try again later."}</AlertDescription>
+        </Alert>
       </div>
     )
   }
+
+  const allQuestionsAnswered = quiz.questions.length > 0 && quiz.questions.every((q: any) => answers[q.id])
+  const currentQuestion = quiz.questions[currentQuestionIndex]
+  const currentAnswer = currentQuestion ? answers[currentQuestion.id] : ""
 
   return (
     <div className="flex min-h-screen flex-col items-center p-4 md:p-8">
-      <div className="max-w-4xl w-full">
+      <div className="w-full max-w-4xl">
         {usingSampleData && (
-          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md flex items-center">
-            <AlertCircle className="h-5 w-5 text-yellow-500 mr-2" />
-            <p className="text-sm text-yellow-700">
-              Using sample questions for demonstration. In a production environment, this would connect to your backend
-              API.
-            </p>
-          </div>
+          <Alert className="mb-6">
+            <AlertCircle className="h-5 w-5" />
+            <AlertTitle>Using Sample Data</AlertTitle>
+            <AlertDescription>
+              The API is not available, so sample quiz data is being used for demonstration purposes.
+            </AlertDescription>
+          </Alert>
         )}
 
-        {loading ? (
-          <div className="space-y-8">
-            <div className="flex justify-between items-center">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-8 w-24" />
-            </div>
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-32 w-full rounded-lg" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <Skeleton key={index} className="h-16 rounded-lg" />
-              ))}
-            </div>
+        {validationError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-5 w-5" />
+            <AlertTitle>Validation Error</AlertTitle>
+            <AlertDescription>{validationError}</AlertDescription>
+          </Alert>
+        )}
+
+        <div className="mb-6 flex flex-col items-center space-y-2">
+          <h1 className="text-center text-3xl font-bold">{quiz.quiz.title}</h1>
+          <p className="text-center text-muted-foreground">{quiz.quiz.description}</p>
+        </div>
+
+        <div className="mb-6 flex items-center justify-between">
+          <div className="text-sm font-medium">
+            Question {currentQuestionIndex + 1} of {quiz.questions.length}
           </div>
-        ) : (
-          <>
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold">{quiz?.title || "Quiz"}</h1>
-              <div className="text-sm text-gray-500">
-                Question {currentQuestionIndex + 1} of {questions.length}
-              </div>
-            </div>
+          <div className="text-sm font-medium">
+            {Object.values(answers).filter(Boolean).length} of {quiz.questions.length} answered
+          </div>
+        </div>
 
-            <Progress value={((currentQuestionIndex + 1) / questions.length) * 100} className="h-2 mb-8" />
+        <Progress
+          value={((currentQuestionIndex + 1) / quiz.questions.length) * 100}
+          className="mb-8 h-2"
+          aria-label="Quiz progress"
+        />
 
-            <Card className="mb-8">
-              <CardContent className="p-6">
-                <h2 className="text-xl font-medium mb-2">{currentQuestion?.question_text || "Loading question..."}</h2>
+        {currentQuestion && (
+          <div className="mb-8 space-y-8">
+            <Card className="overflow-hidden border-2 border-primary/20 shadow-lg">
+              <CardContent className="p-6 md:p-8">
+                <h2 className="text-xl font-semibold md:text-2xl">{currentQuestion.question_text}</h2>
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 gap-4 mb-8">
-              {currentQuestion?.options.map((option, index) => (
-                <Card
+            <div className="space-y-4">
+              {currentQuestion.options.map((option: string, index: number) => (
+                <button
                   key={index}
-                  className={`cursor-pointer transition-all ${currentAnswer === option ? "border-primary bg-primary/10" : "hover:border-gray-400"
+                  className={`w-full rounded-lg border-2 p-4 text-left transition-all hover:border-primary/70 hover:bg-primary/5 ${currentAnswer === option ? "border-primary bg-primary/10 shadow-md" : "border-border bg-card"
                     }`}
-                  onClick={() => handleAnswerSelect(option)}
+                  onClick={() => handleAnswerChange(currentQuestion.id, option)}
                 >
-                  <CardContent className="p-4 flex items-center">
-                    <div className="mr-3 flex-shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border-2 ${currentAnswer === option
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-muted-foreground/30 bg-background"
+                        }`}
+                    >
                       {currentAnswer === option ? (
-                        <CheckCircle className="h-5 w-5 text-primary" />
+                        <CheckCircle className="h-5 w-5" />
                       ) : (
-                        <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
+                        <span>{String.fromCharCode(65 + index)}</span>
                       )}
                     </div>
-                    <div>{option}</div>
-                  </CardContent>
-                </Card>
+                    <span className="text-base md:text-lg">{option}</span>
+                  </div>
+                </button>
               ))}
             </div>
-
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={handlePrevQuestion} disabled={currentQuestionIndex === 0}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Previous
-              </Button>
-
-              {currentQuestionIndex < questions.length - 1 ? (
-                <Button onClick={handleNextQuestion} disabled={!currentAnswer}>
-                  Next <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              ) : (
-                <Button onClick={() => setShowConfirmDialog(true)} disabled={!allQuestionsAnswered}>
-                  Submit Quiz
-                </Button>
-              )}
-            </div>
-          </>
+          </div>
         )}
+
+        <div className="flex items-center justify-between">
+          <Button
+            variant="outline"
+            onClick={handlePrevQuestion}
+            disabled={currentQuestionIndex === 0}
+            className="flex items-center gap-1"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+
+          {currentQuestionIndex < quiz.questions.length - 1 ? (
+            <Button onClick={handleNextQuestion} disabled={!currentAnswer} className="flex items-center gap-1">
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setShowConfirmDialog(true)}
+              disabled={!allQuestionsAnswered}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Submit Quiz
+            </Button>
+          )}
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <div className="flex flex-wrap justify-center gap-2">
+            {quiz.questions.map((_: any, index: number) => (
+              <button
+                key={index}
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${index === currentQuestionIndex
+                  ? "bg-primary text-primary-foreground"
+                  : answers[quiz.questions[index].id]
+                    ? "bg-primary/20 text-primary"
+                    : "bg-muted text-muted-foreground"
+                  }`}
+                onClick={() => setCurrentQuestionIndex(index)}
+              >
+                {index + 1}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
@@ -875,8 +351,7 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSubmitQuiz} disabled={submitting}>
+            <AlertDialogAction onClick={handleSubmit} disabled={submitting}>
               {submitting ? "Submitting..." : "Submit Quiz"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -888,7 +363,7 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
           <AlertDialogHeader>
             <AlertDialogTitle>Quiz Already Submitted</AlertDialogTitle>
             <AlertDialogDescription>
-              You have already taken this quiz. You can only take it once.
+              You have already submitted this quiz. You cannot submit it again.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
