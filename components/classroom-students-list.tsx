@@ -10,7 +10,7 @@ import { getClassroomStudents } from "@/components/quiz-api"
 interface ClassroomStudent {
     student_id: string
     name: string
-    joined_at: string
+    joinedAt: string
 }
 
 interface ClassroomStudentsListProps {
@@ -31,6 +31,7 @@ export default function ClassroomStudentsList({ classroomId, refreshTrigger = 0 
 
             try {
                 const data = await getClassroomStudents(classroomId)
+
                 console.log("API response data:", data)
 
                 // Ensure we're setting an array to the students state
@@ -107,7 +108,7 @@ export default function ClassroomStudentsList({ classroomId, refreshTrigger = 0 
                             {students.map((student) => (
                                 <TableRow key={student.student_id}>
                                     <TableCell className="font-medium">{student.name}</TableCell>
-                                    <TableCell>{formatDate(student.joined_at)}</TableCell>
+                                    <TableCell>{formatDate(student.joinedAt)}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

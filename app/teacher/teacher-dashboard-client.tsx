@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
-import { BarChart, Users, FileText, ArrowRight, Plus, School, Activity } from "lucide-react"
+import { BarChart, Users, FileText, ArrowRight, Plus, School, Activity, UserPlus } from "lucide-react"
 import Link from "next/link"
 
 interface Quiz {
@@ -16,8 +16,15 @@ interface Quiz {
     publicId: string
 }
 
+interface Student {
+    id: string
+    name: string
+    createdAt: string
+}
+
 export default function TeacherDashboardClient() {
     const [quizzes, setQuizzes] = useState<Quiz[]>([])
+    const [students, setStudents] = useState<Student[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const { toast } = useToast()
@@ -43,25 +50,29 @@ export default function TeacherDashboardClient() {
             }
         }
 
+        const fetchStudents = async () => {
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/students`)
+                if (!response.ok) {
+                    throw new Error("Failed to fetch students")
+                }
+                const data = await response.json()
+                setStudents(data)
+            } catch (err) {
+                setError("Failed to load students. Please try again later.")
+                toast({
+                    title: "Error",
+                    description: "Failed to load students. Please try again later.",
+                    variant: "destructive",
+                })
+            } finally {
+                setLoading(false)
+            }
+        }
+
         fetchQuizzes()
+        fetchStudents()
 
-        // Listen for quiz submission events
-        const handleQuizSubmission = (event: CustomEvent) => {
-            const { student, quiz, score, total } = event.detail
-
-            toast({
-                title: "Quiz Submitted",
-                description: `${student} just submitted "${quiz}" with score ${score}/${total}`,
-            })
-        }
-
-        // Add event listener
-        window.addEventListener("quizSubmitted", handleQuizSubmission as EventListener)
-
-        // Clean up
-        return () => {
-            window.removeEventListener("quizSubmitted", handleQuizSubmission as EventListener)
-        }
     }, [toast])
 
     const formatDate = (dateString: string) => {
@@ -113,9 +124,9 @@ export default function TeacherDashboardClient() {
                     </div>
                     <div className="mt-4 md:mt-0 space-x-2">
                         <Link href="/teacher/submissions">
-                            <Button className="gap-2">
+                            <Button className="gap-2" variant="outline">
                                 <Activity className="h-4 w-4" />
-                                Real-time Quiz Submissions
+                                Live Activity
                             </Button>
                         </Link>
                         <Link href="/">
@@ -140,7 +151,7 @@ export default function TeacherDashboardClient() {
                             <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">5</div>
+                            <div className="text-2xl font-bold">{loading ? "..." : students.length}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -154,8 +165,9 @@ export default function TeacherDashboardClient() {
                     </Card>
                 </div>
 
-                {/* Action cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                {/* Action cards - Reorganized into 2x2 grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    {/* First row */}
                     <Link href="/teacher/create-quiz" className="block">
                         <Card className="h-full transition-all hover:shadow-md hover:border-primary/50">
                             <CardContent className="flex flex-col items-center justify-center p-6 h-full">
@@ -170,18 +182,6 @@ export default function TeacherDashboardClient() {
                         </Card>
                     </Link>
 
-                    <Link href="/teacher/classrooms" className="block">
-                        <Card className="h-full transition-all hover:shadow-md hover:border-primary/50">
-                            <CardContent className="flex flex-col items-center justify-center p-6 h-full">
-                                <div className="rounded-full bg-primary/10 p-4 mb-4">
-                                    <School className="h-8 w-8 text-primary" />
-                                </div>
-                                <h3 className="text-xl font-bold mb-2">Manage Classrooms</h3>
-                                <p className="text-center text-muted-foreground">Create and manage classrooms, and enroll students</p>
-                            </CardContent>
-                        </Card>
-                    </Link>
-
                     <Link href="/teacher/submissions" className="block">
                         <Card className="h-full transition-all hover:shadow-md hover:border-primary/50">
                             <CardContent className="flex flex-col items-center justify-center p-6 h-full">
@@ -192,6 +192,33 @@ export default function TeacherDashboardClient() {
                                 <p className="text-center text-muted-foreground">
                                     View student quiz submissions in real-time with visual feedback
                                 </p>
+                            </CardContent>
+                        </Card>
+                    </Link>
+
+                    {/* Second row */}
+                    <Link href="/teacher/students" className="block">
+                        <Card className="h-full transition-all hover:shadow-md hover:border-primary/50">
+                            <CardContent className="flex flex-col items-center justify-center p-6 h-full">
+                                <div className="rounded-full bg-primary/10 p-4 mb-4">
+                                    <UserPlus className="h-8 w-8 text-primary" />
+                                </div>
+                                <h3 className="text-xl font-bold mb-2">Manage Students</h3>
+                                <p className="text-center text-muted-foreground">
+                                    Create, view, and manage students and their classroom enrollments
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </Link>
+
+                    <Link href="/teacher/classrooms" className="block">
+                        <Card className="h-full transition-all hover:shadow-md hover:border-primary/50">
+                            <CardContent className="flex flex-col items-center justify-center p-6 h-full">
+                                <div className="rounded-full bg-primary/10 p-4 mb-4">
+                                    <School className="h-8 w-8 text-primary" />
+                                </div>
+                                <h3 className="text-xl font-bold mb-2">Manage Classrooms</h3>
+                                <p className="text-center text-muted-foreground">Create and manage classrooms, and enroll students</p>
                             </CardContent>
                         </Card>
                     </Link>

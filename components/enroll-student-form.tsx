@@ -9,16 +9,23 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { UserPlus } from "lucide-react"
-import { getStudents, enrollStudentInClassroom } from "@/components/quiz-api"
+import { getStudents, getClassroomStudents, enrollStudentInClassroom } from "@/components/quiz-api"
 
 interface Student {
     id: string
     name: string
+    isEnrolled: boolean
 }
 
 interface EnrollStudentFormProps {
     classroomId: string
     onSuccess?: () => void
+}
+
+interface ClassroomStudent {
+    student_id: string
+    name: string
+    joinedAt: string
 }
 
 export default function EnrollStudentForm({ classroomId, onSuccess }: EnrollStudentFormProps) {
@@ -30,9 +37,26 @@ export default function EnrollStudentForm({ classroomId, onSuccess }: EnrollStud
 
     useEffect(() => {
         const fetchStudents = async () => {
+            setIsLoading(true);
             try {
-                const data = await getStudents()
-                setStudents(data)
+                // Fetch both data sets concurrently
+                const [allStudents, enrolledStudents] = await Promise.all([
+                    getStudents(),
+                    getClassroomStudents(classroomId)
+                ]);
+
+                // Create a map of enrolled student IDs for quick lookup
+                const enrolledStudentIds = new Set(
+                    enrolledStudents.map((student: any) => student.id)
+                );
+
+                // Enhance the students array with enrollment status
+                const processedStudents = allStudents.map((student: any) => ({
+                    ...student,
+                    isEnrolled: enrolledStudentIds.has(student.id)
+                }));
+
+                setStudents(processedStudents);
             } catch (error) {
                 toast({
                     title: "Error",
@@ -105,8 +129,14 @@ export default function EnrollStudentForm({ classroomId, onSuccess }: EnrollStud
                             </SelectTrigger>
                             <SelectContent>
                                 {students.map((student) => (
-                                    <SelectItem key={student.id} value={student.id}>
+                                    <SelectItem
+                                        key={student.id}
+                                        value={student.id}
+                                        disabled={student.isEnrolled}
+                                        className={student.isEnrolled ? "text-muted-foreground" : ""}
+                                    >
                                         {student.name}
+                                        {student.isEnrolled && " (already enrolled)"}
                                     </SelectItem>
                                 ))}
                             </SelectContent>

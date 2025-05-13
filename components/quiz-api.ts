@@ -1,105 +1,10 @@
 // API functions for quiz operations
 
-// Sample data for testing when API fails
-const sampleStudents = [
-  { id: "s1", name: "Alice Johnson" },
-  { id: "s2", name: "Bob Smith" },
-  { id: "s3", name: "Charlie Brown" },
-  { id: "s4", name: "Diana Miller" },
-  { id: "s5", name: "Edward Davis" },
-]
 
-const sampleQuizzes = [
-  {
-    id: "q1",
-    title: "Math Quiz",
-    description: "Test your basic math skills",
-    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    publicId: "QUIZ-123456",
-  },
-  {
-    id: "q2",
-    title: "Science Quiz",
-    description: "Explore the world of science",
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    publicId: "QUIZ-789012",
-  },
-  {
-    id: "q3",
-    title: "History Quiz",
-    description: "Test your knowledge of world history",
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    publicId: "QUIZ-345678",
-  },
-]
-
-const sampleQuestions = [
-  {
-    id: "q1",
-    question_text: "What is the capital of France?",
-    options: ["Paris", "London", "Berlin", "Madrid"],
-  },
-  {
-    id: "q2",
-    question_text: "Which planet is known as the Red Planet?",
-    options: ["Mars", "Venus", "Jupiter", "Saturn"],
-  },
-  {
-    id: "q3",
-    question_text: "What is 2 + 2?",
-    options: ["3", "4", "5", "6"],
-  },
-  {
-    id: "q4",
-    question_text: "Who wrote 'Romeo and Juliet'?",
-    options: ["Charles Dickens", "William Shakespeare", "Jane Austen", "Mark Twain"],
-  },
-]
-
-const sampleClassrooms = [
-  {
-    id: "c1",
-    name: "Math 101",
-    description: "Introduction to Mathematics",
-    teacher_name: "Mr. Johnson",
-    created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "c2",
-    name: "Science 202",
-    description: "Advanced Science Concepts",
-    teacher_name: "Ms. Smith",
-    created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-]
-
-const sampleClassroomStudents = [
-  {
-    student_id: "s1",
-    name: "Alice Johnson",
-    joined_at: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    student_id: "s2",
-    name: "Bob Smith",
-    joined_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    student_id: "s3",
-    name: "Charlie Brown",
-    joined_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    student_id: "s4",
-    name: "Diana Miller",
-    joined_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    student_id: "s5",
-    name: "Edward Davis",
-    joined_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-]
+import {
+  sampleStudents, sampleQuizzes, sampleQuestions, sampleClassrooms,
+  sampleClassroomStudents, sampleStudentsWithClassrooms
+} from "./sample-data"
 
 export async function getStudents() {
   try {
@@ -167,6 +72,8 @@ export async function getQuizByPublicId(publicId: string) {
         questions: sampleQuestions,
       }
     }
+
+
 
     return response.json()
   } catch (error) {
@@ -513,6 +420,9 @@ export async function createQuiz(quizData: {
   }
 }
 
+
+// Classroom-related CRUD API functions 
+
 export async function getClassrooms() {
   try {
     console.log(`Fetching classrooms from: ${process.env.NEXT_PUBLIC_API_URL}/api/classrooms`)
@@ -563,6 +473,7 @@ export async function createClassroom(classroomData: {
   }
 }
 
+
 export async function getClassroomStudents(classroomId: string) {
   try {
     console.log(
@@ -584,6 +495,7 @@ export async function getClassroomStudents(classroomId: string) {
     }
 
     const data = await response.json()
+    console.log(data)
 
     // Ensure we're returning an array
     if (Array.isArray(data)) {
@@ -604,6 +516,33 @@ export async function getClassroomStudents(classroomId: string) {
     return sampleClassroomStudents
   }
 }
+
+
+// Student-related CRUD API functions 
+
+export async function getStudentsWithClassroooms() {
+  try {
+    console.log(
+      `Fetching student classrooms from: ${process.env.NEXT_PUBLIC_API_URL}/api/students/with-classrooms`,
+    )
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/students/with-classrooms`)
+    console.log("Response status:", response.status)
+
+    if (!response.ok) {
+      console.warn(`Failed to fetch students: ${response.status} ${response.statusText}`)
+      console.log("Using sample students data for testing")
+      return sampleStudentsWithClassrooms
+    }
+    const data = await response.json()
+    return data
+
+  } catch (error) {
+    console.error("Error fetching students:", error)
+    console.log("Using sample students data for testing")
+    return sampleStudentsWithClassrooms
+  }
+}
+
 
 export async function enrollStudentInClassroom(classroomId: string, studentId: string) {
   try {
